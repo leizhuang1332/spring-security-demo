@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lz.security.mapper.RolePermissionMapper">
+
+    <select id="getAll" resultType="com.lz.security.entity.RolePermissionEntity">
+        SELECT
+            r.id AS roleId,
+            r.`name` AS roleName,
+            r.enname AS roleEnname,
+            p.id AS permissionId,
+            p.`name` AS permissionName,
+            p.enname AS permissionEnName,
+            p.url AS permissionUrl
+        FROM
+            tb_role AS r
+            INNER JOIN tb_role_permission AS rp ON r.id = rp.role_id
+            INNER JOIN tb_permission AS p ON p.id = rp.permission_id;
+    </select>
+</mapper>
