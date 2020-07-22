@@ -1,6 +1,7 @@
 package com.lz.security.config;
 
 import com.lz.security.config.component.AccessDecisionManagerImpl;
+import com.lz.security.config.component.AuthenticationProviderImpl;
 import com.lz.security.config.component.FilterInvocationSecurityMetadataSourceImpl;
 import com.lz.security.config.component.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private FilterInvocationSecurityMetadataSourceImpl filterInvocationSecurityMetadataSource;
     @Autowired
     private AccessDecisionManagerImpl accessDecisionManager;
+    @Autowired
+    private AuthenticationProviderImpl authenticationProvider;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -46,6 +49,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         // 使用自定义认证与授权
+        auth.authenticationProvider(authenticationProvider);
         auth.userDetailsService(userDetailsService);
     }
 
