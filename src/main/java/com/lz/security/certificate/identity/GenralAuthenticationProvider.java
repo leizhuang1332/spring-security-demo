@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class GenralAuthenticationProvider implements AuthenticationProvider {
     @Autowired
-    private UserDetailsServiceImpl userDetailsService;
+    private GeneralUserDetailsService userDetailsService;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -22,7 +22,7 @@ public class GenralAuthenticationProvider implements AuthenticationProvider {
 
         String loginType = generalAuthenticationToken.getLoginType();
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername((String) principal);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(loginType + "::" + principal);
 
         GeneralAuthenticationToken result = new GeneralAuthenticationToken(userDetails, credentials, userDetails.getAuthorities());
         result.setDetails(details);
