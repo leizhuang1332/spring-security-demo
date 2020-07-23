@@ -1,4 +1,4 @@
-package com.lz.security.handler;
+package com.lz.security.certificate.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.security.access.AccessDeniedException;
