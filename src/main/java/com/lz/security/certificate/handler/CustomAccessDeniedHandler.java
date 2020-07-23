@@ -13,7 +13,6 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-@Service
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
     @Override

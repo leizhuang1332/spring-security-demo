@@ -32,8 +32,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     CustomAccessDecisionManager customAccessDecisionManager;
     @Autowired
     GenralAuthenticationProvider genralAuthenticationProvider;
-    @Autowired
-    CustomAccessDeniedHandler customAccessDeniedHandler;
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -57,17 +55,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                     }
                 })
                 .and()
-                .exceptionHandling()
-                // 权限决策异常处理
-                .accessDeniedHandler(customAccessDeniedHandler)
-                .and()
                 .logout()
                 .logoutSuccessHandler(new CustomLogoutSuccessHandler())
                 .permitAll()
                 .and()
-                .csrf().disable().exceptionHandling()
-                //没有认证时，在这里处理结果，不要重定向
-                .authenticationEntryPoint(new CustomAuthenticationEntryPoint());
+                .csrf().disable()
+                .exceptionHandling()
+                // 没有认证时，在这里处理结果，不要重定向
+                .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
+                // 权限决策异常处理
+                .accessDeniedHandler(new CustomAccessDeniedHandler());
 
         http.addFilterBefore(new ConcurrentSessionFilter(sessionRegistry(), event -> {
             HttpServletResponse resp = event.getResponse();
