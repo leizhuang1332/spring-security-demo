@@ -1,65 +1,109 @@
 package com.lz.security.config;
 
-import com.lz.security.config.component.AccessDecisionManagerImpl;
-import com.lz.security.config.component.AuthenticationProviderImpl;
-import com.lz.security.config.component.FilterInvocationSecurityMetadataSourceImpl;
-import com.lz.security.config.component.UserDetailsServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lz.security.certificate.authority.CustomAccessDecisionManager;
+import com.lz.security.certificate.authority.CustomSecurityMetadataSource;
+import com.lz.security.certificate.identity.GeneralAuthenticationFilter;
+import com.lz.security.certificate.identity.GenralAuthenticationProvider;
+import com.lz.security.handler.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.session.ConcurrentSessionFilter;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-
     @Autowired
-    private UserDetailsServiceImpl userDetailsService;
+    CustomSecurityMetadataSource CustomSecurityMetadataSource;
     @Autowired
-    private FilterInvocationSecurityMetadataSourceImpl filterInvocationSecurityMetadataSource;
+    CustomAccessDecisionManager customAccessDecisionManager;
     @Autowired
-    private AccessDecisionManagerImpl accessDecisionManager;
+    GenralAuthenticationProvider genralAuthenticationProvider;
     @Autowired
-    private AuthenticationProviderImpl authenticationProvider;
+    CustomAccessDeniedHandler customAccessDeniedHandler;
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeRequests()
-                .anyRequest()
-                .authenticated()
-                .withObjectPostProcessor(new ObjectPostProcessor<FilterSecurityInterceptor>() {
-                    @Override
-                    public <O extends FilterSecurityInterceptor> O postProcess(O o) {
-                        o.setSecurityMetadataSource(filterInvocationSecurityMetadataSource); //动态获取url权限配置
-                        o.setAccessDecisionManager(accessDecisionManager); //权限判断
-                        return o;
-                    }
-                });
-
-        http.formLogin();
-
-        http.cors().disable();
-
-        http.rememberMe();
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        // 使用自定义认证与授权
-        auth.authenticationProvider(authenticationProvider);
-        auth.userDetailsService(userDetailsService);
+        auth.authenticationProvider(genralAuthenticationProvider);
     }
 
     @Override
     public void configure(WebSecurity web) throws Exception {
-        web.ignoring()
-                .antMatchers(
-                        "/js/**",
-                        "/css/**",
-                        "/img/**",
-                        "/webjars/**");
+        web.ignoring().antMatchers("/css/**", "/js/**", "/index.html", "/img/**", "/fonts/**", "/favicon.ico", "/verifyCode");
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                .withObjectPostProcessor(new ObjectPostProcessor<FilterSecurityInterceptor>() {
+                    @Override
+                    public <O extends FilterSecurityInterceptor> O postProcess(O object) {
+                        object.setAccessDecisionManager(customAccessDecisionManager);
+                        object.setSecurityMetadataSource(CustomSecurityMetadataSource);
+                        return object;
+                    }
+                })
+                .and()
+                .exceptionHandling()
+                // 权限决策异常处理
+                .accessDeniedHandler(customAccessDeniedHandler)
+                .and()
+                .logout()
+                .logoutSuccessHandler(new CustomLogoutSuccessHandler())
+                .permitAll()
+                .and()
+                .csrf().disable().exceptionHandling()
+                //没有认证时，在这里处理结果，不要重定向
+                .authenticationEntryPoint(new CustomAuthenticationEntryPoint());
+
+        http.addFilterBefore(new ConcurrentSessionFilter(sessionRegistry(), event -> {
+            HttpServletResponse resp = event.getResponse();
+            resp.setContentType("application/json;charset=utf-8");
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            PrintWriter out = resp.getWriter();
+            Map<String, Object> map = new HashMap<>();
+            map.put("code", HttpServletResponse.SC_UNAUTHORIZED);
+            map.put("msg", "您已在另一台设备登录，本次登录已下线!");
+            out.write(new ObjectMapper().writeValueAsString(map));
+            out.flush();
+            out.close();
+        }), ConcurrentSessionFilter.class);
+
+        http.addFilterBefore(generalLoginFilter(), UsernamePasswordAuthenticationFilter.class);
+    }
+
+    @Bean
+    public GeneralAuthenticationFilter generalLoginFilter() throws Exception {
+        GeneralAuthenticationFilter generalAuthenticationFilter = new GeneralAuthenticationFilter();
+        generalAuthenticationFilter.setFilterProcessesUrl("/login");
+        generalAuthenticationFilter.setAuthenticationManager(authenticationManagerBean());
+        generalAuthenticationFilter.setAuthenticationSuccessHandler(new CustomAuthenticationSuccessHandler());
+        generalAuthenticationFilter.setAuthenticationFailureHandler(new CustomAuthenticationFailureHandler());
+        return generalAuthenticationFilter;
+    }
+
+    @Bean
+    public SessionRegistryImpl sessionRegistry() {
+        return new SessionRegistryImpl();
     }
 }

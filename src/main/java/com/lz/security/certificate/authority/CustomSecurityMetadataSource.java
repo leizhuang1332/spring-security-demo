@@ -1,8 +1,9 @@
-package com.lz.security.config.component;
+package com.lz.security.certificate.authority;
 
 import com.lz.security.Bootstrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.ConfigAttribute;
+import org.springframework.security.access.SecurityConfig;
 import org.springframework.security.web.FilterInvocation;
 import org.springframework.security.web.access.intercept.FilterInvocationSecurityMetadataSource;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -18,7 +19,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
-public class FilterInvocationSecurityMetadataSourceImpl implements FilterInvocationSecurityMetadataSource {
+public class CustomSecurityMetadataSource implements FilterInvocationSecurityMetadataSource {
     @Override
     public Collection<ConfigAttribute> getAttributes(Object o) throws IllegalArgumentException {
         // 获取请求地址
@@ -30,7 +31,7 @@ public class FilterInvocationSecurityMetadataSourceImpl implements FilterInvocat
                 return entry.getValue();
             }
         }
-        return null;
+        return SecurityConfig.createList("ROLE_LOGIN");
     }
 
     @Override

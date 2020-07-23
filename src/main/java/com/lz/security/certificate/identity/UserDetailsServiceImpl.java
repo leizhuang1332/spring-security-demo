@@ -1,4 +1,4 @@
-package com.lz.security.config.component;
+package com.lz.security.certificate.identity;
 
 import com.lz.security.entity.RoleEntity;
 import com.lz.security.entity.UserEntity;
@@ -51,6 +51,5 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         // 由框架完成认证工作
         assert user != null;
         return new User(user.getUsername(), passwordEncoder.encode(user.getPassword()), grantedAuthorities);
-
     }
 }

@@ -1,4 +1,4 @@
-package com.lz.security.config.component;
+package com.lz.security.certificate.authority;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDecisionManager;
@@ -20,7 +20,7 @@ import java.util.Collection;
  */
 @Slf4j
 @Component
-public class AccessDecisionManagerImpl implements AccessDecisionManager {
+public class CustomAccessDecisionManager implements AccessDecisionManager {
     @Override
     public void decide(Authentication authentication, Object object, Collection<ConfigAttribute> configAttributes) throws AccessDeniedException, InsufficientAuthenticationException {
         log.info("{} --- 需要的权限 --- {}", ((FilterInvocation) object).getRequestUrl(), configAttributes);
@@ -29,7 +29,7 @@ public class AccessDecisionManagerImpl implements AccessDecisionManager {
 
 
         if(principal instanceof String && principal.equals("anonymousUser")){
-            throw new AccessDeniedException("SimpleGrantedAuthority!!");
+            throw new AccessDeniedException("尚未登录，请登录!");
         } else if (principal instanceof User){
             log.info("{} --- 具有的权限 --- {}",((User) principal).getUsername(), authorities);
         }
@@ -38,7 +38,7 @@ public class AccessDecisionManagerImpl implements AccessDecisionManager {
             String needRole = configAttribute.getAttribute();
             if ("ROLE_LOGIN".equals(needRole)) {
                 if (authentication instanceof AnonymousAuthenticationToken) {
-                    throw new BadCredentialsException("Not logged in!!");
+                    throw new BadCredentialsException("尚未登录，请登录!");
                 } else {
                     return;
                 }
@@ -51,7 +51,7 @@ public class AccessDecisionManagerImpl implements AccessDecisionManager {
                 }
             }
         }
-        throw new AccessDeniedException("SimpleGrantedAuthority!!");
+        throw new AccessDeniedException("权限不足，请联系管理员!");
     }
 
     @Override
