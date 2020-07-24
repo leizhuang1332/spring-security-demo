@@ -6,6 +6,7 @@ import com.lz.security.certificate.authority.CustomSecurityMetadataSource;
 import com.lz.security.certificate.identity.GeneralAuthenticationFilter;
 import com.lz.security.certificate.identity.GenralAuthenticationProvider;
 import com.lz.security.certificate.handler.*;
+import com.lz.security.certificate.jwt.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.ObjectPostProcessor;
@@ -79,17 +80,23 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             out.close();
         }), ConcurrentSessionFilter.class);
 
-        http.addFilterBefore(generalLoginFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(generalAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
     }
 
     @Bean
-    public GeneralAuthenticationFilter generalLoginFilter() throws Exception {
+    public GeneralAuthenticationFilter generalAuthenticationFilter() throws Exception {
         GeneralAuthenticationFilter generalAuthenticationFilter = new GeneralAuthenticationFilter();
         generalAuthenticationFilter.setFilterProcessesUrl("/login");
         generalAuthenticationFilter.setAuthenticationManager(authenticationManagerBean());
         generalAuthenticationFilter.setAuthenticationSuccessHandler(new CustomAuthenticationSuccessHandler());
         generalAuthenticationFilter.setAuthenticationFailureHandler(new CustomAuthenticationFailureHandler());
         return generalAuthenticationFilter;
+    }
+
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(){
+        return new JwtAuthenticationFilter();
     }
 
     @Bean
