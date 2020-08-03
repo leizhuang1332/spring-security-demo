@@ -1,6 +1,6 @@
 # 1.项目maven打包
 # 2.需要权限管理的项目pom引用此依赖
-<dependency>
+--- <dependency>
     <groupId>com.youzidata</groupId>
     <artifactId>authentication-plugin</artifactId>
     <version>1.0.0.RELEASE</version>
